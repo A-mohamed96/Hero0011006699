@@ -1,7 +1,7 @@
 /****************************************
  *  API URL → Google Script Web App
  ****************************************/
-const API_URL = "https://script.google.com/macros/s/AKfycbwfG-HcUV-yl3-aAUmZouwJ8zLlz96d61K7LWOc6CCOwjC6ExX-8mk3CyzXdKgVEV5Eqg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwEzBEhgp2C9ZdFEL2oCqZYCm4v1wOlLg2c7vMMSy_b7N9FBWY_8K_C0onnGYBvf8WKAA/exec";
 
 /****************************************
  *  CLOUD: LOAD DATA
