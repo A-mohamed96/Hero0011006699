@@ -5,7 +5,7 @@ const API_URL =
 "https://script.google.com/macros/s/AKfycbwEzBEhgp2C9ZdFEL2oCqZYCm4v1wOlLg2c7vMMSy_b7N9FBWY_8K_C0onnGYBvf8WKAA/exec";
 
 /****************************************
- *  LOAD DB FROM CLOUD (Supports object or array)
+ *  LOAD DB FROM CLOUD (Supports array or object)
  ****************************************/
 async function loadDB(){
     try{
@@ -21,11 +21,10 @@ async function loadDB(){
 
         console.log("CLOUD RESULT:", json);
 
-        // NEW FIX ✔
         if(Array.isArray(json)){
             return json.length ? json[0] : null;
         }
-        return json; // إذا كان Object
+        return json;
     }
     catch(err){
         console.error("LOAD ERROR:", err);
@@ -54,4 +53,8 @@ async function saveDB(DB){
     }
 }
 
-export { loadDB, saveDB };
+/****************************************
+ *  MAKE FUNCTIONS AVAILABLE TO app.js
+ ****************************************/
+window.loadDB = loadDB;
+window.saveDB = saveDB;
