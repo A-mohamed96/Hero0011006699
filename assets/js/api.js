@@ -2,7 +2,7 @@
  *  API URL → Google Script Web App
  ****************************************/
 const API_URL =
-"https://script.google.com/macros/s/AKfycbxr5WUrR7SlDoGU076usU73fIWd3EIH5GN6wwl3Cs2rCVCC4qfpqfTlH8uhXPilSCwgeQ/exec";
+"https://script.google.com/macros/s/AKfycbyC5I2Tno9w-wy4XXx9Wx5ivh1pf3svWCgX8xZHpos9-tDIuvU50ZB8jKmMGncVjZ-1Eg/exec";
 
 /****************************************
  *  LOAD DB FROM CLOUD
