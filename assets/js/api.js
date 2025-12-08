@@ -5,26 +5,21 @@ const API_URL =
 "https://script.google.com/macros/s/AKfycbxr5WUrR7SlDoGU076usU73fIWd3EIH5GN6wwl3Cs2rCVCC4qfpqfTlH8uhXPilSCwgeQ/exec";
 
 /****************************************
- *  LOAD DB FROM CLOUD (Supports array or object)
+ *  LOAD DB FROM CLOUD
  ****************************************/
 async function loadDB(){
     try{
         const res = await fetch(API_URL, {
             method: "POST",
             body: JSON.stringify({
-                action: "list",
-                type: "SupplySys_DB"
+                action: "list"   // فقط "list"
             })
         });
 
         const json = await res.json();
-
         console.log("CLOUD RESULT:", json);
 
-        if(Array.isArray(json)){
-            return json.length ? json[0] : null;
-        }
-        return json;
+        return json || null;
     }
     catch(err){
         console.error("LOAD ERROR:", err);
@@ -40,8 +35,7 @@ async function saveDB(DB){
         await fetch(API_URL, {
             method: "POST",
             body: JSON.stringify({
-                action: "save",
-                type: "SupplySys_DB",
+                action: "save", // فقط "save"
                 data: DB
             })
         });
@@ -54,7 +48,7 @@ async function saveDB(DB){
 }
 
 /****************************************
- *  MAKE FUNCTIONS AVAILABLE TO app.js
+ *  MAKE FUNCTIONS AVAILABLE
  ****************************************/
 window.loadDB = loadDB;
 window.saveDB = saveDB;
