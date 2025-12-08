@@ -1,4 +1,11 @@
 /****************************************
+ *  GLOBAL ERROR CATCHER (مهم جداً)
+ ****************************************/
+window.onerror = function(msg, url, line){
+    alert("JS ERROR:\n" + msg + "\n" + url + ":" + line);
+};
+
+/****************************************
  *  API URL → Google Script Web App
  ****************************************/
 const API_URL = "https://script.google.com/macros/s/AKfycbwEzBEhgp2C9ZdFEL2oCqZYCm4v1wOlLg2c7vMMSy_b7N9FBWY_8K_C0onnGYBvf8WKAA/exec";
@@ -16,8 +23,22 @@ async function loadFromCloud(){
             })
         });
 
-        const json = await res.json();
-        console.log("CLOUD LOADED:", json);
+        const text = await res.text();
+        console.log("RAW CLOUD:", text);
+
+        let json;
+
+        try{
+            json = JSON.parse(text);
+        }catch(e){
+            console.error("JSON PARSE ERROR:", e);
+            return null;
+        }
+
+        if(!Array.isArray(json)){
+            console.warn("Cloud returned non-array:", json);
+            return json;
+        }
 
         return json.length ? json[0] : null;
 
@@ -47,7 +68,7 @@ async function saveToCloud(DB){
 }
 
 /****************************************
- *  LOCAL DB OBJECT
+ *  LOCAL DB
  ****************************************/
 const DB = {
     farms: [],
@@ -56,41 +77,49 @@ const DB = {
     shipments: [],
     suppliers: [],
     empty_items: [
-        { id: "branik", name: "برانيك" },
-        { id: "karton", name: "كرتون" },
-        { id: "bant", name: "بانت" },
-        { id: "pallet", name: "بلتات خشب" }
+        { id: "branik",  name: "برانيك" },
+        { id: "karton",  name: "كرتون" },
+        { id: "bant",    name: "بانت" },
+        { id: "pallet",  name: "بلتات خشب" }
     ],
     empty_receivings: [],
     empty_issues: [],
     pallet_receivings: [],
     pallet_returns: [],
-    users: []
+    users: [] // ← البيانات بتيجي من السحابة
 };
 
 /****************************************
- *  ALWAYS LOAD FROM CLOUD FIRST
+ *  LOAD DB FROM CLOUD
  ****************************************/
 async function load(){
-    const cloudData = await loadFromCloud();
+    const cloud = await loadFromCloud();
 
-    if(cloudData){
-        Object.assign(DB, cloudData);
+    if(cloud){
+        Object.assign(DB, cloud);
         console.log("DB Loaded From Cloud");
     } else {
-        console.warn("NO CLOUD DATA FOUND");
+        console.warn("No cloud data found");
     }
 }
 
+/****************************************
+ *  SAVE
+ ****************************************/
 function save(){
     saveToCloud(DB);
 }
 
 /****************************************
- *  LOGIN FUNCTION
+ *  LOGIN
  ****************************************/
 async function login(username, password){
-    await load(); // ensure DB is loaded
+    await load(); // تحميل السحابة أولاً
+
+    if(!DB.users || DB.users.length === 0){
+        alert("⚠ لا يوجد مستخدمين في قاعدة البيانات!");
+        return false;
+    }
 
     const user = DB.users.find(
         u => u.username === username && u.password === password
@@ -105,7 +134,7 @@ async function login(username, password){
 }
 
 /****************************************
- *  UTILITY
+ *  UTIL
  ****************************************/
 function $qs(s){ return document.querySelector(s); }
 
@@ -113,16 +142,17 @@ function $qs(s){ return document.querySelector(s); }
  *  INIT
  ****************************************/
 async function init(){
+
     await load();
 
     const path = location.pathname.split("/").pop();
 
     /* ------------------ LOGIN PAGE ------------------ */
     if(path === "index.html"){
-        const loginForm = $qs("#loginForm");
+        const form = $qs("#loginForm");
 
-        if(loginForm){
-            loginForm.addEventListener("submit", async e=>{
+        if(form){
+            form.addEventListener("submit", async e=>{
                 e.preventDefault();
 
                 const user = $qs("#username").value.trim();
@@ -133,7 +163,7 @@ async function init(){
                 if(ok){
                     location.href = "dashboard.html";
                 } else {
-                    alert("خطأ في اسم المستخدم أو كلمة المرور");
+                    alert("❌ اسم مستخدم أو كلمة مرور خطأ");
                 }
             });
         }
@@ -155,7 +185,6 @@ async function init(){
         });
     }
 
-    /* PAGE ROUTING */
     if(path === "dashboard.html") renderDashboard();
 }
 
