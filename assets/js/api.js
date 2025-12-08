@@ -3,12 +3,11 @@
  ****************************************/
 const API_URL = "https://script.google.com/macros/s/AKfycbwfG-HcUV-yl3-aAUmZouwJ8zLlz96d61K7LWOc6CCOwjC6ExX-8mk3CyzXdKgVEV5Eqg/exec";
 
-
-/****************************************
- *  LOAD DATA FROM GOOGLE DRIVE
- ****************************************/
-async function loadFromCloud(){
-    try {
+/************************************
+ *  LOAD DB FROM CLOUD
+ ************************************/
+async function loadDB(){
+    try{
         const res = await fetch(API_URL, {
             method: "POST",
             body: JSON.stringify({
@@ -18,24 +17,23 @@ async function loadFromCloud(){
         });
 
         const json = await res.json();
-        console.log("CLOUD LOAD:", json);
 
-        // الملف يحتوي على الداتا داخل array
-        return json.length > 0 ? json[0] : null;
+        console.log("CLOUD DB LOADED:", json);
 
-    } catch(e){
-        console.error("Cloud Load Error:", e);
+        return json;
+    }
+    catch(err){
+        console.error("LOAD ERROR:", err);
         return null;
     }
 }
 
-
-/****************************************
- *  SAVE DATA TO GOOGLE DRIVE
- ****************************************/
-async function saveToCloud(DB){
-    try {
-        const res = await fetch(API_URL, {
+/************************************
+ *  SAVE DB TO CLOUD
+ ************************************/
+async function saveDB(DB){
+    try{
+        await fetch(API_URL, {
             method: "POST",
             body: JSON.stringify({
                 action: "save",
@@ -44,9 +42,9 @@ async function saveToCloud(DB){
             })
         });
 
-        console.log("CLOUD SAVE:", await res.text());
-
-    } catch(e){
-        console.error("Cloud Save Error:", e);
+        console.log("CLOUD DB SAVED");
+    }
+    catch(err){
+        console.error("SAVE ERROR:", err);
     }
 }
