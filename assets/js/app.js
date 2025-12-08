@@ -1,74 +1,5 @@
 /****************************************
- *  GLOBAL ERROR CATCHER (مهم جداً)
- ****************************************/
-window.onerror = function(msg, url, line){
-    alert("JS ERROR:\n" + msg + "\n" + url + ":" + line);
-};
-
-/****************************************
- *  API URL → Google Script Web App
- ****************************************/
-const API_URL = "https://script.google.com/macros/s/AKfycbwEzBEhgp2C9ZdFEL2oCqZYCm4v1wOlLg2c7vMMSy_b7N9FBWY_8K_C0onnGYBvf8WKAA/exec";
-
-/****************************************
- *  CLOUD: LOAD DATA
- ****************************************/
-async function loadFromCloud(){
-    try {
-        const res = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "list",
-                type: "SupplySys_DB"
-            })
-        });
-
-        const text = await res.text();
-        console.log("RAW CLOUD:", text);
-
-        let json;
-
-        try{
-            json = JSON.parse(text);
-        }catch(e){
-            console.error("JSON PARSE ERROR:", e);
-            return null;
-        }
-
-        if(!Array.isArray(json)){
-            console.warn("Cloud returned non-array:", json);
-            return json;
-        }
-
-        return json.length ? json[0] : null;
-
-    } catch(e){
-        console.error("Cloud Load Error:", e);
-        return null;
-    }
-}
-
-/****************************************
- *  CLOUD: SAVE DATA
- ****************************************/
-async function saveToCloud(DB){
-    try {
-        await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "save",
-                type: "SupplySys_DB",
-                data: DB
-            })
-        });
-        console.log("CLOUD SAVED");
-    } catch(e){
-        console.error("Cloud Save Error:", e);
-    }
-}
-
-/****************************************
- *  LOCAL DB
+ *  LOCAL DB OBJECT
  ****************************************/
 const DB = {
     farms: [],
@@ -77,49 +8,44 @@ const DB = {
     shipments: [],
     suppliers: [],
     empty_items: [
-        { id: "branik",  name: "برانيك" },
-        { id: "karton",  name: "كرتون" },
-        { id: "bant",    name: "بانت" },
-        { id: "pallet",  name: "بلتات خشب" }
+        { id: "branik", name: "برانيك" },
+        { id: "karton", name: "كرتون" },
+        { id: "bant", name: "بانت" },
+        { id: "pallet", name: "بلتات خشب" }
     ],
     empty_receivings: [],
     empty_issues: [],
     pallet_receivings: [],
     pallet_returns: [],
-    users: [] // ← البيانات بتيجي من السحابة
+    users: []
 };
 
 /****************************************
- *  LOAD DB FROM CLOUD
+ *  LOAD ALWAYS FROM CLOUD FIRST
  ****************************************/
 async function load(){
-    const cloud = await loadFromCloud();
+    const cloud = await window.loadDB();
 
     if(cloud){
         Object.assign(DB, cloud);
-        console.log("DB Loaded From Cloud");
+        console.log("DB LOADED FROM CLOUD:", DB);
     } else {
-        console.warn("No cloud data found");
+        console.warn("NO CLOUD DATA — starting with empty DB");
     }
 }
 
 /****************************************
- *  SAVE
+ *  SAVE TO CLOUD ALWAYS
  ****************************************/
 function save(){
-    saveToCloud(DB);
+    window.saveDB(DB);
 }
 
 /****************************************
- *  LOGIN
+ *  LOGIN FUNCTION
  ****************************************/
 async function login(username, password){
-    await load(); // تحميل السحابة أولاً
-
-    if(!DB.users || DB.users.length === 0){
-        alert("⚠ لا يوجد مستخدمين في قاعدة البيانات!");
-        return false;
-    }
+    await load();   // تحميل آخر نسخة من السحابة
 
     const user = DB.users.find(
         u => u.username === username && u.password === password
@@ -143,27 +69,25 @@ function $qs(s){ return document.querySelector(s); }
  ****************************************/
 async function init(){
 
-    await load();
-
     const path = location.pathname.split("/").pop();
 
-    /* ------------------ LOGIN PAGE ------------------ */
-    if(path === "index.html"){
-        const form = $qs("#loginForm");
+    /************** LOGIN PAGE **************/
+    if(path === "index.html" || path === ""){
+        const loginForm = $qs("#loginForm");
 
-        if(form){
-            form.addEventListener("submit", async e=>{
+        if(loginForm){
+            loginForm.addEventListener("submit", async e=>{
                 e.preventDefault();
 
-                const user = $qs("#username").value.trim();
-                const pass = $qs("#password").value.trim();
+                const username = $qs("#username").value.trim();
+                const password = $qs("#password").value.trim();
 
-                const ok = await login(user, pass);
+                const ok = await login(username, password);
 
                 if(ok){
                     location.href = "dashboard.html";
                 } else {
-                    alert("❌ اسم مستخدم أو كلمة مرور خطأ");
+                    alert("خطأ في اسم المستخدم أو كلمة المرور");
                 }
             });
         }
@@ -171,21 +95,34 @@ async function init(){
         return;
     }
 
-    /* ------------------ PROTECTED PAGES ------------------ */
+    /************** PROTECT PAGES **************/
     if(!localStorage.getItem("supply_logged_in")){
         location.href = "index.html";
         return;
     }
 
-    /* LOGOUT */
+    await load(); // تحميل البيانات للصفحات الأخرى
+
+    /************** LOGOUT **************/
     const logout = $qs("#logoutBtn");
     if(logout){
         logout.addEventListener("click", ()=>{
             localStorage.removeItem("supply_logged_in");
+            location.href = "index.html";
         });
     }
 
+    /************** PAGE ROUTING **************/
     if(path === "dashboard.html") renderDashboard();
+    if(path === "farms.html"){ renderFarms(); setupFarmForm(); }
+    if(path === "receivings.html"){ renderReceivings(); setupReceiveForm(); }
+    if(path === "trucks.html"){ renderTrucks(); setupTruckForm(); }
+    if(path === "shipments.html"){ renderShipments(); setupShipForm(); }
+    if(path === "empty.html"){ renderEmptyStock(); setupEmptyForms(); }
+    if(path === "pallets.html"){ renderPallets(); setupPalletForms(); }
+    if(path === "suppliers.html"){ renderSuppliers(); setupSupplierForm(); }
+    if(path === "users.html"){ renderUsers(); setupUserForm(); }
+    if(path === "reports.html"){ renderReports(); }
 }
 
 document.addEventListener("DOMContentLoaded", init);
