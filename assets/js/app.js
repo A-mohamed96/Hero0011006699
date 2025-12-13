@@ -12,7 +12,7 @@ let DB = { farms: {} };
  *  ON LOAD
  ****************************************/
 document.addEventListener("DOMContentLoaded", async () => {
-  DB = await loadDB();
+  DB = await loadDB() || {};
   if (!DB.farms) DB.farms = {};
   renderFarms();
 });
@@ -59,11 +59,11 @@ if (farmForm) {
     e.preventDefault();
 
     const farm = {
-      code: farm_code.value.trim(),
-      name: farm_name.value.trim(),
-      owner: owner_name.value.trim(),
-      acres: Number(acres.value || 0),
-      target: Number(target.value || 0)
+      code: document.getElementById("farm_code").value.trim(),
+      name: document.getElementById("farm_name").value.trim(),
+      owner: document.getElementById("owner_name").value.trim(),
+      acres: Number(document.getElementById("acres").value || 0),
+      target: Number(document.getElementById("target").value || 0)
     };
 
     if (!farm.code || !farm.name) {
