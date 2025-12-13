@@ -42,7 +42,6 @@ export async function loadDB() {
     const snap = await get(DB_REF);
     const data = snap.exists() ? snap.val() : {};
 
-    /* ضمان الهيكل الأساسي */
     return {
       farms: data.farms || {},
       trucks: data.trucks || {},
@@ -65,7 +64,7 @@ export async function loadDB() {
 }
 
 /****************************************
- * SAVE FULL DB (استبدال كامل)
+ * SAVE FULL DB
  ****************************************/
 export async function saveDB(data) {
   try {
@@ -77,7 +76,7 @@ export async function saveDB(data) {
 }
 
 /****************************************
- * UPDATE PARTIAL DB (آمن للتوسعة)
+ * UPDATE PARTIAL DB
  ****************************************/
 export async function updateDB(partialData) {
   try {
@@ -89,10 +88,8 @@ export async function updateDB(partialData) {
 }
 
 /****************************************
- * USERS / AUTH HELPERS
+ * AUTH (Local Users)
  ****************************************/
-
-/* تسجيل دخول بسيط (Local Auth) */
 export async function login(username, password) {
   const data = await loadDB();
   const users = data.users || {};
@@ -107,13 +104,11 @@ export async function login(username, password) {
   return user;
 }
 
-/* جلب المستخدم الحالي */
 export function getCurrentUser() {
   const u = localStorage.getItem("SupplySys_user");
   return u ? JSON.parse(u) : null;
 }
 
-/* تسجيل خروج */
 export function logout() {
   localStorage.removeItem("SupplySys_user");
   window.location.href = "index.html";
@@ -135,7 +130,7 @@ export function requireAdmin() {
  ****************************************/
 export async function lockTruck(truckCode) {
   const data = await loadDB();
-  if (data.trucks && data.trucks[truckCode]) {
+  if (data.trucks?.[truckCode]) {
     data.trucks[truckCode].status = "مشغول";
     await saveDB(data);
   }
@@ -143,7 +138,7 @@ export async function lockTruck(truckCode) {
 
 export async function unlockTruck(truckCode) {
   const data = await loadDB();
-  if (data.trucks && data.trucks[truckCode]) {
+  if (data.trucks?.[truckCode]) {
     data.trucks[truckCode].status = "متاح";
     await saveDB(data);
   }
