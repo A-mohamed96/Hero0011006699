@@ -6,13 +6,16 @@ import { loadDB, saveDB } from "./api.js";
 /****************************************
  *  GLOBAL DB
  ****************************************/
-let DB = { farms:{}, receivings:{} };
+let DB = {
+  farms: {},
+  receivings: {}
+};
 
 /****************************************
  *  ON LOAD
  ****************************************/
 document.addEventListener("DOMContentLoaded", async () => {
-  DB = await loadDB();
+  DB = await loadDB() || {};
 
   if (!DB.farms) DB.farms = {};
   if (!DB.receivings) DB.receivings = {};
@@ -24,100 +27,76 @@ document.addEventListener("DOMContentLoaded", async () => {
 /****************************************
  *  FILL FARMS DROPDOWN
  ****************************************/
-function fillFarmsSelect(){
-  const select = document.getElementById("farmCode");
-  if(!select) return;
+function fillFarmsSelect() {
+  const select = document.getElementById("recv_farm");
+  if (!select) return;
 
   select.innerHTML = `<option value="">اختر مزرعة</option>`;
 
-  Object.values(DB.farms).forEach(f => {
+  Object.values(DB.farms).forEach(farm => {
     const opt = document.createElement("option");
-    opt.value = f.code;
-    opt.textContent = `${f.code} - ${f.name}`;
+    opt.value = farm.code;
+    opt.textContent = `${farm.code} - ${farm.name}`;
     select.appendChild(opt);
   });
 }
 
 /****************************************
- *  RENDER RECEIVINGS
+ *  RENDER RECEIVINGS TABLE
  ****************************************/
-function renderReceivings(){
+function renderReceivings() {
   const tbody = document.querySelector("#receivingsTable tbody");
-  if(!tbody) return;
+  if (!tbody) return;
 
   tbody.innerHTML = "";
 
-  Object.values(DB.receivings).forEach(r => {
+  Object.values(DB.receivings).forEach((r, i) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${r.id}</td>
+      <td>${i + 1}</td>
       <td>${r.date}</td>
-      <td>${r.farmName}</td>
-      <td>${r.quantity}</td>
-      <td>${r.emptyOut}</td>
-      <td>${r.palletsOut}</td>
-      <td>
-        <button class="btn btn-sm btn-danger" data-id="${r.id}">حذف</button>
-      </td>
+      <td>${r.farmCode}</td>
+      <td>${r.product}</td>
+      <td>${r.qty}</td>
+      <td>${r.quality}</td>
+      <td>${r.truck || ""}</td>
     `;
     tbody.appendChild(tr);
-  });
-
-  document.querySelectorAll("button[data-id]").forEach(btn=>{
-    btn.onclick = ()=> deleteReceiving(btn.dataset.id);
   });
 }
 
 /****************************************
  *  SAVE RECEIVING
  ****************************************/
-const form = document.getElementById("receivingForm");
+const recvForm = document.getElementById("receiveForm");
 
-if(form){
-  form.addEventListener("submit", async e=>{
+if (recvForm) {
+  recvForm.addEventListener("submit", async e => {
     e.preventDefault();
 
-    const farm = DB.farms[farmCode.value];
-
-    if(!farm){
-      alert("اختر مزرعة صحيحة");
-      return;
-    }
-
     const receiving = {
-      id: receiving_id.value.trim(),
-      date: receiving_date.value,
-      farmCode: farm.code,
-      farmName: farm.name,
-      quantity: Number(quantity.value || 0),
-      emptyOut: Number(emptyOut.value || 0),
-      palletsOut: Number(palletsOut.value || 0),
-      notes: notes.value.trim()
+      id: Date.now(),
+      date: new Date().toISOString().split("T")[0],
+      farmCode: document.getElementById("recv_farm").value,
+      product: document.getElementById("recv_product").value.trim(),
+      qty: Number(document.getElementById("recv_qty").value),
+      quality: document.getElementById("recv_quality").value,
+      truck: document.getElementById("recv_truck").value || ""
     };
 
-    if(!receiving.id || !receiving.date){
-      alert("الكود والتاريخ إجباري");
+    if (!receiving.farmCode || !receiving.qty) {
+      alert("اختر المزرعة والكمية");
       return;
     }
 
     DB.receivings[receiving.id] = receiving;
     await saveDB(DB);
 
-    form.reset();
+    recvForm.reset();
     bootstrap.Modal.getInstance(
-      document.getElementById("receivingModal")
+      document.getElementById("receiveModal")
     ).hide();
 
     renderReceivings();
   });
-}
-
-/****************************************
- *  DELETE
- ****************************************/
-async function deleteReceiving(id){
-  if(!confirm("تأكيد الحذف؟")) return;
-  delete DB.receivings[id];
-  await saveDB(DB);
-  renderReceivings();
 }
