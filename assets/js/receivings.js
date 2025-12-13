@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /****************************************
- * FILL FARMS
+ * FILL FARMS SELECT
  ****************************************/
 function fillFarmsSelect() {
   const select = document.getElementById("recv_farm");
@@ -45,7 +45,7 @@ function fillFarmsSelect() {
 }
 
 /****************************************
- * FILL TRUCKS (AVAILABLE ONLY)
+ * FILL TRUCKS SELECT
  ****************************************/
 function fillTrucksSelect() {
   const select = document.getElementById("recv_truck");
@@ -54,7 +54,7 @@ function fillTrucksSelect() {
   select.innerHTML = `<option value="">اختر براد</option>`;
 
   Object.values(DB.trucks).forEach(truck => {
-    if (truck.status === "متاح" || truck.status === "ready") {
+    if (truck.status === "متاح") {
       const opt = document.createElement("option");
       opt.value = truck.code;
       opt.textContent = `${truck.code} (${truck.plate || ""})`;
@@ -64,7 +64,7 @@ function fillTrucksSelect() {
 }
 
 /****************************************
- * RENDER RECEIVINGS
+ * RENDER RECEIVINGS TABLE
  ****************************************/
 function renderReceivings() {
   const tbody = document.querySelector("#receivingsTable tbody");
@@ -86,12 +86,9 @@ function renderReceivings() {
       <td>${r.quality}</td>
       <td>${truck ? truck.code : ""}</td>
       <td>
-        <button class="btn btn-sm btn-danger" data-id="${r.id}">
-          حذف
-        </button>
+        <button class="btn btn-sm btn-danger" data-id="${r.id}">حذف</button>
       </td>
     `;
-
     tbody.appendChild(tr);
   });
 
@@ -101,7 +98,7 @@ function renderReceivings() {
 }
 
 /****************************************
- * SAVE RECEIVING + LOCK TRUCK
+ * SAVE RECEIVING (LOCK TRUCK)
  ****************************************/
 const receiveForm = document.getElementById("receiveForm");
 
@@ -128,7 +125,6 @@ if (receiveForm) {
       truckCode
     };
 
-    // حفظ الاستلام
     DB.receivings[receiving.id] = receiving;
 
     // 🔒 قفل البراد
@@ -149,20 +145,12 @@ if (receiveForm) {
 }
 
 /****************************************
- * DELETE RECEIVING + UNLOCK TRUCK
+ * DELETE RECEIVING
  ****************************************/
 async function deleteReceiving(id) {
   if (!confirm("تأكيد الحذف؟")) return;
 
-  const receiving = DB.receivings[id];
-
-  if (receiving && DB.trucks[receiving.truckCode]) {
-    DB.trucks[receiving.truckCode].status = "متاح";
-  }
-
   delete DB.receivings[id];
   await saveDB(DB);
-
-  fillTrucksSelect();
   renderReceivings();
 }
