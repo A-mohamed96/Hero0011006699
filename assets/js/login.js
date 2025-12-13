@@ -1,4 +1,4 @@
-import { loadDB } from "./api.js";
+import { login } from "./api.js";
 
 document.getElementById("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -6,20 +6,12 @@ document.getElementById("loginForm").addEventListener("submit", async e => {
   const username = username.value.trim();
   const password = password.value.trim();
 
-  const DB = await loadDB();
-  const users = DB.users || {};
-
-  const user = Object.values(users).find(
-    u => u.username === username && u.password === password
-  );
+  const user = await login(username, password);
 
   if (!user) {
-    alert("بيانات غير صحيحة");
+    alert("اسم المستخدم أو كلمة المرور خطأ");
     return;
   }
 
-  localStorage.setItem("SupplySysUser", JSON.stringify(user));
-
-  window.location.href =
-    user.role === "admin" ? "dashboard.html" : "receivings.html";
+  window.location.href = "dashboard.html";
 });
