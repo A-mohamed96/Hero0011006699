@@ -4,26 +4,21 @@
 import { loadDB, saveDB } from "./api.js";
 
 /****************************************
- *  GLOBAL DB OBJECT
+ *  GLOBAL DB
  ****************************************/
-let DB = {
-  farms: {}
-};
+let DB = { farms: {} };
 
 /****************************************
  *  ON LOAD
  ****************************************/
 document.addEventListener("DOMContentLoaded", async () => {
   DB = await loadDB();
-
-  // تأمين الهيكل
   if (!DB.farms) DB.farms = {};
-
   renderFarms();
 });
 
 /****************************************
- *  RENDER FARMS TABLE
+ *  RENDER FARMS
  ****************************************/
 function renderFarms() {
   const tbody = document.querySelector("#farmsTable tbody");
@@ -33,7 +28,6 @@ function renderFarms() {
 
   Object.values(DB.farms).forEach(farm => {
     const tr = document.createElement("tr");
-
     tr.innerHTML = `
       <td>${farm.code}</td>
       <td>${farm.name}</td>
@@ -42,20 +36,24 @@ function renderFarms() {
       <td>${farm.target || 0}</td>
       <td>—</td>
       <td>
-        <button class="btn btn-sm btn-danger" onclick="deleteFarm('${farm.code}')">
+        <button class="btn btn-sm btn-danger" data-code="${farm.code}">
           حذف
         </button>
       </td>
     `;
-
     tbody.appendChild(tr);
+  });
+
+  document.querySelectorAll("button[data-code]").forEach(btn => {
+    btn.onclick = () => deleteFarm(btn.dataset.code);
   });
 }
 
 /****************************************
- *  ADD / SAVE FARM
+ *  SAVE FARM
  ****************************************/
 const farmForm = document.getElementById("farmForm");
+
 if (farmForm) {
   farmForm.addEventListener("submit", async e => {
     e.preventDefault();
@@ -88,10 +86,9 @@ if (farmForm) {
 /****************************************
  *  DELETE FARM
  ****************************************/
-window.deleteFarm = async function(code) {
+async function deleteFarm(code) {
   if (!confirm("تأكيد الحذف؟")) return;
-
   delete DB.farms[code];
   await saveDB(DB);
   renderFarms();
-};
+}
