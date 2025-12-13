@@ -1,54 +1,65 @@
 /****************************************
- *  API URL → Google Script Web App
+ *  FIREBASE CONFIG
  ****************************************/
-const API_URL =
-"https://script.google.com/macros/s/AKfycbyC5I2Tno9w-wy4XXx9Wx5ivh1pf3svWCgX8xZHpos9-tDIuvU50ZB8jKmMGncVjZ-1Eg/exec";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getDatabase,
+  ref,
+  get,
+  set
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /****************************************
- *  LOAD DB FROM CLOUD
+ *  🔴 عدّل القيم دي من Firebase Console
+ ****************************************/
+const firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://PROJECT_ID-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "PROJECT_ID",
+  storageBucket: "PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+
+/****************************************
+ *  INIT
+ ****************************************/
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const DB_REF = ref(db, "SupplySys_DB");
+
+/****************************************
+ *  LOAD DB
  ****************************************/
 async function loadDB(){
-    try{
-        const res = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "list"   // فقط "list"
-            })
-        });
-
-        const json = await res.json();
-        console.log("CLOUD RESULT:", json);
-
-        return json || null;
+  try{
+    const snap = await get(DB_REF);
+    if(snap.exists()){
+      console.log("DB LOADED", snap.val());
+      return snap.val();
     }
-    catch(err){
-        console.error("LOAD ERROR:", err);
-        return null;
-    }
+    return null;
+  }catch(e){
+    console.error("LOAD ERROR", e);
+    return null;
+  }
 }
 
 /****************************************
- *  SAVE DB TO CLOUD
+ *  SAVE DB
  ****************************************/
 async function saveDB(DB){
-    try{
-        await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "save", // فقط "save"
-                data: DB
-            })
-        });
-
-        console.log("CLOUD SAVED");
-    }
-    catch(err){
-        console.error("SAVE ERROR:", err);
-    }
+  try{
+    await set(DB_REF, DB);
+    console.log("DB SAVED");
+  }catch(e){
+    console.error("SAVE ERROR", e);
+  }
 }
 
 /****************************************
- *  MAKE FUNCTIONS AVAILABLE
+ *  EXPOSE
  ****************************************/
 window.loadDB = loadDB;
 window.saveDB = saveDB;
