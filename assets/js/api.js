@@ -10,16 +10,16 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /****************************************
- *  🔴 عدّل القيم دي من Firebase Console
+ *  CONFIG (من Firebase Console)
  ****************************************/
 const firebaseConfig = {
-  apiKey: "API_KEY",
-  authDomain: "PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://PROJECT_ID-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "PROJECT_ID",
-  storageBucket: "PROJECT_ID.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  apiKey: "AIzaSyANmvWGm-Y3V2qeQlwbQZVTwpvFHG_MSm0",
+  authDomain: "supplysys-2025.firebaseapp.com",
+  databaseURL: "https://supplysys-2025-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "supplysys-2025",
+  storageBucket: "supplysys-2025.appspot.com",
+  messagingSenderId: "116513264770",
+  appId: "1:116513264770:web:a1923cb82ec147a1be109b"
 };
 
 /****************************************
@@ -27,39 +27,31 @@ const firebaseConfig = {
  ****************************************/
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+/* root node */
 const DB_REF = ref(db, "SupplySys_DB");
 
 /****************************************
  *  LOAD DB
  ****************************************/
-async function loadDB(){
-  try{
+export async function loadDB() {
+  try {
     const snap = await get(DB_REF);
-    if(snap.exists()){
-      console.log("DB LOADED", snap.val());
-      return snap.val();
-    }
-    return null;
-  }catch(e){
+    return snap.exists() ? snap.val() : {};
+  } catch (e) {
     console.error("LOAD ERROR", e);
-    return null;
+    return {};
   }
 }
 
 /****************************************
  *  SAVE DB
  ****************************************/
-async function saveDB(DB){
-  try{
-    await set(DB_REF, DB);
+export async function saveDB(data) {
+  try {
+    await set(DB_REF, data);
     console.log("DB SAVED");
-  }catch(e){
+  } catch (e) {
     console.error("SAVE ERROR", e);
   }
 }
-
-/****************************************
- *  EXPOSE
- ****************************************/
-window.loadDB = loadDB;
-window.saveDB = saveDB;
