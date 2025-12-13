@@ -4,7 +4,7 @@ let DB = { trucks: {} };
 
 document.addEventListener("DOMContentLoaded", async () => {
   DB = await loadDB() || {};
-  if (!DB.trucks) DB.trucks = {};
+  DB.trucks = DB.trucks || {};
   renderTrucks();
 });
 
@@ -20,55 +20,50 @@ function renderTrucks() {
   Object.values(DB.trucks).forEach(truck => {
     const tr = document.createElement("tr");
 
-    let actionHTML = `
-      <button class="btn btn-sm btn-danger" data-delete="${truck.code}">
-        حذف
-      </button>
-    `;
-
-    // زر فتح البراد لو مشغول
-    if (truck.status === "مشغول") {
-      actionHTML += `
-        <button class="btn btn-sm btn-warning ms-1" data-open="${truck.code}">
-          فتح البراد
-        </button>
-      `;
-    }
-
     tr.innerHTML = `
       <td>${truck.code}</td>
       <td>${truck.plate || ""}</td>
       <td>${truck.capacity || 0}</td>
+      <td>${truck.status}</td>
       <td>
-        <span class="badge ${
-          truck.status === "متاح" ? "bg-success" :
-          truck.status === "مشغول" ? "bg-danger" :
-          "bg-secondary"
-        }">
-          ${truck.status}
-        </span>
+        ${
+          truck.status === "مشغول"
+            ? `<button class="btn btn-sm btn-success" data-open="${truck.code}">فتح</button>`
+            : ""
+        }
+        <button class="btn btn-sm btn-danger" data-delete="${truck.code}">
+          حذف
+        </button>
       </td>
-      <td>${actionHTML}</td>
     `;
 
     tbody.appendChild(tr);
   });
-
-  // حذف
-  document.querySelectorAll("[data-delete]").forEach(btn => {
-    btn.onclick = () => deleteTruck(btn.dataset.delete);
-  });
-
-  // فتح البراد
-  document.querySelectorAll("[data-open]").forEach(btn => {
-    btn.onclick = () => openTruck(btn.dataset.open);
-  });
 }
+
+/****************************************
+ * ACTIONS (OPEN / DELETE)
+ ****************************************/
+document.addEventListener("click", async e => {
+  if (e.target.dataset.open) {
+    const code = e.target.dataset.open;
+
+    if (!DB.trucks[code]) return;
+
+    DB.trucks[code].status = "متاح";
+    await saveDB(DB);
+    renderTrucks();
+  }
+
+  if (e.target.dataset.delete) {
+    deleteTruck(e.target.dataset.delete);
+  }
+});
 
 /****************************************
  * SAVE
  ****************************************/
-document.getElementById("truckForm")?.addEventListener("submit", async e => {
+document.getElementById("truckForm").addEventListener("submit", async e => {
   e.preventDefault();
 
   const truck = {
@@ -95,24 +90,10 @@ document.getElementById("truckForm")?.addEventListener("submit", async e => {
 });
 
 /****************************************
- * OPEN TRUCK (إعادة متاح)
- ****************************************/
-async function openTruck(code) {
-  if (!confirm("تأكيد فتح البراد؟")) return;
-
-  if (!DB.trucks[code]) return;
-
-  DB.trucks[code].status = "متاح";
-  await saveDB(DB);
-  renderTrucks();
-}
-
-/****************************************
  * DELETE
  ****************************************/
 async function deleteTruck(code) {
   if (!confirm("تأكيد الحذف؟")) return;
-
   delete DB.trucks[code];
   await saveDB(DB);
   renderTrucks();
