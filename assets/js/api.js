@@ -100,10 +100,14 @@ export async function login(username, password) {
 
   if (!user) return null;
 
-  localStorage.setItem("SupplySys_user", JSON.stringify({
-  username: user.username,
-  role: user.role
-}));
+  localStorage.setItem(
+    "SupplySys_user",
+    JSON.stringify({
+      username: user.username,
+      role: user.role
+    })
+  );
+
   return user;
 }
 
