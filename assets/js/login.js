@@ -1,12 +1,16 @@
 import { login } from "./api.js";
 
-document.getElementById("loginForm").addEventListener("submit", async e => {
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
+  const u = document.getElementById("username").value.trim();
+  const p = document.getElementById("password").value.trim();
 
-  const user = await login(username, password);
+  console.log("TRY LOGIN:", u, p);
+
+  const user = await login(u, p);
+
+  console.log("USER:", user);
 
   if (!user) {
     alert("اسم المستخدم أو كلمة المرور خطأ");
