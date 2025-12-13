@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /****************************************
- * FILL FARMS SELECT
+ * FILL FARMS
  ****************************************/
 function fillFarmsSelect() {
   const select = document.getElementById("recv_farm");
@@ -45,7 +45,7 @@ function fillFarmsSelect() {
 }
 
 /****************************************
- * FILL TRUCKS SELECT
+ * FILL TRUCKS (AVAILABLE ONLY)
  ****************************************/
 function fillTrucksSelect() {
   const select = document.getElementById("recv_truck");
@@ -54,8 +54,7 @@ function fillTrucksSelect() {
   select.innerHTML = `<option value="">اختر براد</option>`;
 
   Object.values(DB.trucks).forEach(truck => {
-    // ملاحظة: غيّر القيمة حسب اللي مستخدمها عندك
-    if (truck.status === "ready" || truck.status === "متاح") {
+    if (truck.status === "متاح" || truck.status === "ready") {
       const opt = document.createElement("option");
       opt.value = truck.code;
       opt.textContent = `${truck.code} (${truck.plate || ""})`;
@@ -65,7 +64,7 @@ function fillTrucksSelect() {
 }
 
 /****************************************
- * RENDER RECEIVINGS TABLE
+ * RENDER RECEIVINGS
  ****************************************/
 function renderReceivings() {
   const tbody = document.querySelector("#receivingsTable tbody");
@@ -73,15 +72,13 @@ function renderReceivings() {
 
   tbody.innerHTML = "";
 
-  const receivingsArr = Object.values(DB.receivings);
-
-  receivingsArr.forEach((r, index) => {
+  Object.values(DB.receivings).forEach((r, i) => {
     const farm = DB.farms[r.farmCode];
     const truck = DB.trucks[r.truckCode];
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${index + 1}</td>
+      <td>${i + 1}</td>
       <td>${r.date}</td>
       <td>${farm ? farm.name : r.farmCode}</td>
       <td>${r.product}</td>
@@ -104,7 +101,7 @@ function renderReceivings() {
 }
 
 /****************************************
- * SAVE RECEIVING
+ * SAVE RECEIVING + LOCK TRUCK
  ****************************************/
 const receiveForm = document.getElementById("receiveForm");
 
@@ -112,9 +109,9 @@ if (receiveForm) {
   receiveForm.addEventListener("submit", async e => {
     e.preventDefault();
 
-    const farmCode = document.getElementById("recv_farm").value;
-    const truckCode = document.getElementById("recv_truck").value;
-    const qty = Number(document.getElementById("recv_qty").value);
+    const farmCode = recv_farm.value;
+    const truckCode = recv_truck.value;
+    const qty = Number(recv_qty.value);
 
     if (!farmCode || !truckCode || !qty) {
       alert("المزرعة + البراد + الكمية إجباري");
@@ -125,13 +122,19 @@ if (receiveForm) {
       id: Date.now().toString(),
       date: new Date().toISOString().split("T")[0],
       farmCode,
-      product: document.getElementById("recv_product").value.trim() || "غير محدد",
+      product: recv_product.value.trim() || "غير محدد",
       qty,
-      quality: document.getElementById("recv_quality").value,
+      quality: recv_quality.value,
       truckCode
     };
 
+    // حفظ الاستلام
     DB.receivings[receiving.id] = receiving;
+
+    // 🔒 قفل البراد
+    if (DB.trucks[truckCode]) {
+      DB.trucks[truckCode].status = "مشغول";
+    }
 
     await saveDB(DB);
 
@@ -140,17 +143,26 @@ if (receiveForm) {
       document.getElementById("receiveModal")
     ).hide();
 
+    fillTrucksSelect();
     renderReceivings();
   });
 }
 
 /****************************************
- * DELETE RECEIVING
+ * DELETE RECEIVING + UNLOCK TRUCK
  ****************************************/
 async function deleteReceiving(id) {
   if (!confirm("تأكيد الحذف؟")) return;
 
+  const receiving = DB.receivings[id];
+
+  if (receiving && DB.trucks[receiving.truckCode]) {
+    DB.trucks[receiving.truckCode].status = "متاح";
+  }
+
   delete DB.receivings[id];
   await saveDB(DB);
+
+  fillTrucksSelect();
   renderReceivings();
 }
