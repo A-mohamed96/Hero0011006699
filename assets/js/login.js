@@ -17,5 +17,9 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     return;
   }
 
+  // حفظ المستخدم الحالي (Session)
+  localStorage.setItem("currentUser", JSON.stringify(user));
+
+  // التحويل للداشبورد
   window.location.href = "dashboard.html";
 });
