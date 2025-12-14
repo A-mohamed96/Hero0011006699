@@ -11,7 +11,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 /****************************************
- * CONFIG (Firebase Console)
+ * CONFIG
  ****************************************/
 const firebaseConfig = {
   apiKey: "AIzaSyANmvWGm-Y3V2qeQlwbQZVTwpvFHG_MSm0",
@@ -28,67 +28,50 @@ const firebaseConfig = {
  ****************************************/
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-/****************************************
- * ROOT NODE
- ****************************************/
 const DB_REF = ref(db, "SupplySys_DB");
 
 /****************************************
- * LOAD FULL DB
+ * INIT ADMIN (ONCE)
+ ****************************************/
+async function initAdmin() {
+  const snap = await get(DB_REF);
+  const data = snap.exists() ? snap.val() : {};
+
+  if (!data.users || Object.keys(data.users).length === 0) {
+    data.users = {
+      admin: {
+        username: "admin",
+        password: "1234",
+        role: "admin"
+      }
+    };
+
+    await set(DB_REF, data);
+    console.log("Admin user created");
+  }
+}
+
+initAdmin();
+
+/****************************************
+ * LOAD DB
  ****************************************/
 export async function loadDB() {
-  try {
-    const snap = await get(DB_REF);
-    const data = snap.exists() ? snap.val() : {};
+  const snap = await get(DB_REF);
+  const data = snap.exists() ? snap.val() : {};
 
-    return {
-      farms: data.farms || {},
-      trucks: data.trucks || {},
-      receivings: data.receivings || {},
-      shipments: data.shipments || {},
-      users: data.users || {},
-      settings: data.settings || {}
-    };
-  } catch (e) {
-    console.error("LOAD ERROR", e);
-    return {
-      farms: {},
-      trucks: {},
-      receivings: {},
-      shipments: {},
-      users: {},
-      settings: {}
-    };
-  }
+  return {
+    farms: data.farms || {},
+    trucks: data.trucks || {},
+    receivings: data.receivings || {},
+    shipments: data.shipments || {},
+    users: data.users || {},
+    settings: data.settings || {}
+  };
 }
 
 /****************************************
- * SAVE FULL DB
- ****************************************/
-export async function saveDB(data) {
-  try {
-    await set(DB_REF, data);
-    console.log("DB SAVED");
-  } catch (e) {
-    console.error("SAVE ERROR", e);
-  }
-}
-
-/****************************************
- * UPDATE PARTIAL DB
- ****************************************/
-export async function updateDB(partialData) {
-  try {
-    await update(DB_REF, partialData);
-    console.log("DB UPDATED");
-  } catch (e) {
-    console.error("UPDATE ERROR", e);
-  }
-}
-
-/****************************************
- * AUTH (Local Users)
+ * AUTH
  ****************************************/
 export async function login(username, password) {
   const data = await loadDB();
@@ -102,10 +85,7 @@ export async function login(username, password) {
 
   localStorage.setItem(
     "SupplySys_user",
-    JSON.stringify({
-      username: user.username,
-      role: user.role
-    })
+    JSON.stringify({ username: user.username, role: user.role })
   );
 
   return user;
@@ -119,34 +99,4 @@ export function getCurrentUser() {
 export function logout() {
   localStorage.removeItem("SupplySys_user");
   window.location.href = "index.html";
-}
-
-/****************************************
- * PERMISSIONS
- ****************************************/
-export function requireAdmin() {
-  const user = getCurrentUser();
-  if (!user || user.role !== "admin") {
-    alert("غير مصرح بالدخول");
-    window.location.href = "dashboard.html";
-  }
-}
-
-/****************************************
- * TRUCK STATUS HELPERS
- ****************************************/
-export async function lockTruck(truckCode) {
-  const data = await loadDB();
-  if (data.trucks?.[truckCode]) {
-    data.trucks[truckCode].status = "مشغول";
-    await saveDB(data);
-  }
-}
-
-export async function unlockTruck(truckCode) {
-  const data = await loadDB();
-  if (data.trucks?.[truckCode]) {
-    data.trucks[truckCode].status = "متاح";
-    await saveDB(data);
-  }
 }
