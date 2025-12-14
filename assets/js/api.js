@@ -31,43 +31,11 @@ const db = getDatabase(app);
 const DB_REF = ref(db, "SupplySys_DB");
 
 /****************************************
- * INIT ADMIN (ONCE)
- ****************************************/
-async function initAdmin() {
-  const snap = await get(DB_REF);
-  const data = snap.exists() ? snap.val() : {};
-
-  if (!data.users || Object.keys(data.users).length === 0) {
-    data.users = {
-      admin: {
-        username: "admin",
-        password: "1234",
-        role: "admin"
-      }
-    };
-
-    await set(DB_REF, data);
-    console.log("Admin user created");
-  }
-}
-
-initAdmin();
-
-/****************************************
  * LOAD DB
  ****************************************/
 export async function loadDB() {
   const snap = await get(DB_REF);
-  const data = snap.exists() ? snap.val() : {};
-
-  return {
-    farms: data.farms || {},
-    trucks: data.trucks || {},
-    receivings: data.receivings || {},
-    shipments: data.shipments || {},
-    users: data.users || {},
-    settings: data.settings || {}
-  };
+  return snap.exists() ? snap.val() : {};
 }
 
 /****************************************
@@ -75,22 +43,27 @@ export async function loadDB() {
  ****************************************/
 export async function login(username, password) {
   const data = await loadDB();
-  const users = data.users || {};
 
-  const user = Object.values(users).find(
-    u => u.username === username && u.password === password
-  );
+  if (!data.users || !data.users[username]) return null;
 
-  if (!user) return null;
+  const user = data.users[username];
+
+  if (user.password !== password) return null;
 
   localStorage.setItem(
     "SupplySys_user",
-    JSON.stringify({ username: user.username, role: user.role })
+    JSON.stringify({
+      username: user.username,
+      role: user.role
+    })
   );
 
   return user;
 }
 
+/****************************************
+ * SESSION
+ ****************************************/
 export function getCurrentUser() {
   const u = localStorage.getItem("SupplySys_user");
   return u ? JSON.parse(u) : null;
