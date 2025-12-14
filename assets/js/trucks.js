@@ -1,10 +1,12 @@
-import { loadDB, saveDB } from "./api.js";
+import { loadDB, saveDB, requireAdmin } from "./api.js";
+
+requireAdmin();
 
 let DB = { trucks: {} };
 
 document.addEventListener("DOMContentLoaded", async () => {
   DB = await loadDB() || {};
-  DB.trucks = DB.trucks || {};
+  DB.trucks ||= {};
   renderTrucks();
 });
 
@@ -17,21 +19,21 @@ function renderTrucks() {
 
   tbody.innerHTML = "";
 
-  Object.values(DB.trucks).forEach(truck => {
+  Object.entries(DB.trucks).forEach(([code, truck]) => {
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td>${truck.code}</td>
+      <td>${code}</td>
       <td>${truck.plate || ""}</td>
       <td>${truck.capacity || 0}</td>
       <td>${truck.status}</td>
       <td>
         ${
           truck.status === "مشغول"
-            ? `<button class="btn btn-sm btn-success" data-open="${truck.code}">فتح</button>`
+            ? `<button class="btn btn-sm btn-success" data-open="${code}">فتح</button>`
             : ""
         }
-        <button class="btn btn-sm btn-danger" data-delete="${truck.code}">
+        <button class="btn btn-sm btn-danger" data-delete="${code}">
           حذف
         </button>
       </td>
@@ -42,13 +44,11 @@ function renderTrucks() {
 }
 
 /****************************************
- * ACTIONS (OPEN / DELETE)
+ * ACTIONS
  ****************************************/
 document.addEventListener("click", async e => {
   if (e.target.dataset.open) {
     const code = e.target.dataset.open;
-
-    if (!DB.trucks[code]) return;
 
     DB.trucks[code].status = "متاح";
     await saveDB(DB);
@@ -66,19 +66,22 @@ document.addEventListener("click", async e => {
 document.getElementById("truckForm").addEventListener("submit", async e => {
   e.preventDefault();
 
-  const truck = {
-    code: truck_code.value.trim(),
-    plate: truck_plate.value.trim(),
-    capacity: Number(truck_capacity.value || 0),
-    status: truck_status.value
-  };
+  const code = document.getElementById("truck_code").value.trim();
+  const plate = document.getElementById("truck_plate").value.trim();
+  const capacity = Number(document.getElementById("truck_capacity").value || 0);
+  const status = document.getElementById("truck_status").value;
 
-  if (!truck.code) {
+  if (!code) {
     alert("كود البراد إجباري");
     return;
   }
 
-  DB.trucks[truck.code] = truck;
+  DB.trucks[code] = {
+    plate,
+    capacity,
+    status
+  };
+
   await saveDB(DB);
 
   e.target.reset();
@@ -94,6 +97,7 @@ document.getElementById("truckForm").addEventListener("submit", async e => {
  ****************************************/
 async function deleteTruck(code) {
   if (!confirm("تأكيد الحذف؟")) return;
+
   delete DB.trucks[code];
   await saveDB(DB);
   renderTrucks();
